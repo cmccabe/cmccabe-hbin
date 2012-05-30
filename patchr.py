@@ -1,11 +1,17 @@
 #!/usr/bin/python
 
+#
+# Hadoop JIRAs generally require a patch file to be attached.
+# This script creates such a patch file from a git repo.
+#
+
 import glob
 import os
 import re
 import subprocess
 import sys
 
+listdir = os.path.join(os.environ["HOME"], "list")
 jira = sys.argv[1]
 branch = sys.argv[2]
 branch_suffix = None
@@ -21,7 +27,7 @@ if (len(sys.argv) >= 4):
         overwrite = True
     else:
         raise RuntimeError("can't understand option %s" % sys.argv[3])
-gpat = "/home/cmccabe/list/" + jira + "*/"
+gpat = listdir + "/" + jira + "*/"
 print "gpat = " + gpat
 paths = glob.glob(gpat)
 if (len(paths) == 0):

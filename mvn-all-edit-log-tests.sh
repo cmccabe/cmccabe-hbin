@@ -9,4 +9,6 @@ TestSaveNamespace,\
 TestSecurityTokenEditLog,\
 TestStorageDirectoryFailure,\
 TestStorageRestore,\
-TestFileJournalManager
+TestFileJournalManager,\
+TestEditLogsDuringFailover,\
+TestEditLogTailer

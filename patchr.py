@@ -19,6 +19,8 @@ if (branch == "trunk"):
     branch_suffix = ""
 elif (branch == "branch-1"):
     branch_suffix = "-b1"
+elif (branch == "branch-2"):
+    branch_suffix = "-b2"
 else:
     raise RuntimeError("can't understand branch %s" % branch)
 overwrite  = False

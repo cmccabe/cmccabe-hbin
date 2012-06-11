@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#
+# List all modified, deleted, or untracked but trackable files in a Hadoop
+# repository.
+#
+
+git ls-files -o -X .gitignore -x "hadoop-hdfs-project/hadoop-hdfs/build"

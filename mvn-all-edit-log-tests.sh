@@ -11,4 +11,5 @@ TestStorageDirectoryFailure,\
 TestStorageRestore,\
 TestFileJournalManager,\
 TestEditLogsDuringFailover,\
-TestEditLogTailer
+TestEditLogTailer,\
+TestEditLogFileOutputStream

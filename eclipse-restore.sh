@@ -4,6 +4,9 @@
 # Rebuild the eclipse stuff after in a hadoop/ directory after it's
 # been clobbered
 #
+# NOTE: you may also have to right click on a few projects and do "Open
+# Project" in Eclipse to get things back to normal.
+#
 
 die() {
     echo $@

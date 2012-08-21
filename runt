@@ -29,6 +29,8 @@ TEST_NAME=$1
 
 D=$(readlink -f "`dirname $0`")
 [ -d $D ] || die "failed to locate enclosing directory of this script"
+[ -d $HADOOP_HOME_BASE ] || die "you must set HADOOP_HOME_BASE to \
+the directory where the Hadoop tar is installed."
 source $D/jarjar.sh \
     $HADOOP_HOME_BASE/share/hadoop/common \
     $HADOOP_HOME_BASE/share/hadoop/hdfs

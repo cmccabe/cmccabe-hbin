@@ -25,6 +25,6 @@ fi
 mvn clean
 mvn package -e -Pdist -Dtar -DskipTests -Dmaven.javadoc.skip=true
 mvn -Declipse.workspace=${W} eclipse:configure-workspace
-mvn -DdownloadSources=true -DdownloadJavadocs=true eclipse:eclipse
+#mvn -DdownloadSources=true -DdownloadJavadocs=true eclipse:eclipse
 cp -a hadoop-hdfs-project/hadoop-hdfs/target/webapps \
     hadoop-hdfs-project/hadoop-hdfs/target/classes/webapps

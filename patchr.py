@@ -29,7 +29,7 @@ if (len(sys.argv) >= 4):
         overwrite = True
     else:
         raise RuntimeError("can't understand option %s" % sys.argv[3])
-gpat = listdir + "/" + jira + "*/"
+gpat = listdir + "/" + jira + "_*/"
 print "gpat = " + gpat
 paths = glob.glob(gpat)
 if (len(paths) == 0):

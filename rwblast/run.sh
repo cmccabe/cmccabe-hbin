@@ -20,7 +20,7 @@ Also comment "Defaults env_reset" if it's present.
 EOF
 }
 
-num_copies=20
+num_copies=1
 while getopts  "f:hn:" flag; do
     case $flag in
     h) usage; exit 0;;
@@ -31,7 +31,7 @@ done
 
 TMPSCRIPT=`mktemp -t rwblast.XXXXXXXXXX` || exit 1
 trap "rm -rf ${TMPSCRIPT}; exit" INT TERM EXIT
-rwblasts=`for i in $(seq -s ' ' -w 0 $num_copies); do echo -n "/rwblast-$i "; done`
+rwblasts=`for i in $(seq -s ' ' -w 1 $num_copies); do echo -n "/rwblast-$i "; done`
 echo "/h/bin/hadoop fs -cat $rwblasts > /dev/null" > $TMPSCRIPT \
     || die "failed to create $TMPSCRIPT"
 chmod +x $TMPSCRIPT || die "failed to chmod $TMPSCRIPT"

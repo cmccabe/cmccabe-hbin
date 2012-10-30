@@ -48,5 +48,5 @@ echo "** running $(cat $TMPSCRIPT) **"
 if [ "x$perf_op" == "xtime" ]; then
     /usr/bin/time $TMPSCRIPT || die "$TMPSCRIPT failed"
 else
-    sudo perf ${perf_op} $TMPSCRIPT || die "$TMPSCRIPT failed."
+    sudo -E perf ${perf_op} $TMPSCRIPT || die "$TMPSCRIPT failed."
 fi

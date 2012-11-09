@@ -46,8 +46,8 @@ class Node(object):
         elif (self.ty == "data"):
             return "/r/logs/dn" + str(self.ident) + ".log"
     def get_hadoop_command(self):
-        cmd = [ "/home/cmccabe/cmccabe-hbin/nn-ha-do.sh", 
-            "/home/cmccabe/cmccabe-hbin/nn-ha-do.sh", 
+        cmd = [ "/home/cmccabe/cmccabe-hbin/doit",
+            "/home/cmccabe/cmccabe-hbin/doit",
             self.get_conf_dir(),
             "-redirect", self.get_log_file(), 
             "/h/bin/hdfs" ]

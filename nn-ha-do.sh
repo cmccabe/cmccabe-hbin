@@ -14,4 +14,4 @@ source $PREV_HADOOP_CONF_DIR/$HA/hadoop-env.sh
 
 # now HADOOP_CONF_DIR is set to $PREV_HADOOP_CONF_DIR/$HA, and the other shell
 # variables are set accordingly.
-"$@"
+exec "$@"

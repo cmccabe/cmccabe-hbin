@@ -53,7 +53,7 @@ func (rl *RefLog) LoadFile(name string) error {
 				"on line %d", lineno))
 		}
 		commit := Commit {parts[0], parts[1], lineno}
-		rl.commits[commit.hash] = &commit
+		rl.commits[commit.text] = &commit
 	}
 	return nil
 }
@@ -61,9 +61,9 @@ func (rl *RefLog) LoadFile(name string) error {
 func (rl *RefLog) GetMissing(alt *RefLog) *RefLog {
 	missing := NewRefLog()
 	for _, c := range alt.commits {
-		_, present := rl.commits[c.hash]
+		_, present := rl.commits[c.text]
 		if (!present) {
-			missing.commits[c.hash] = c
+			missing.commits[c.text] = c
 		}
 	}
 	return missing
@@ -112,6 +112,8 @@ func main() {
 	fileNames := []string {
 		fmt.Sprintf("/tmp/jirafun.1.%d", os.Getpid()),
 		fmt.Sprintf("/tmp/jirafun.2.%d", os.Getpid()) }
+	defer os.Remove(fileNames[0])
+	defer os.Remove(fileNames[1])
 	err := gitCommand(fileNames[1], "git", "rev-list",
 		"--pretty=oneline", *branchName)
 	if err != nil {
@@ -136,6 +138,5 @@ func main() {
 		os.Exit(1)
 	}
 	missing := refLogs[0].GetMissing(refLogs[1])
-	fmt.Print(refLogs[0].String())
 	fmt.Print(missing.String())
 }

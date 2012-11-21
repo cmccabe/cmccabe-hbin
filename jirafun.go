@@ -54,8 +54,15 @@ func (rl *RefLog) LoadFile(name string, regex *regexp.Regexp) error {
 				"on line %d", lineno))
 		}
 		commit := Commit {parts[0], parts[1], lineno}
-		if (regex.MatchString(commit.text)) {
-			rl.commits[commit.text] = &commit
+		if (regex.NumSubexp() == 1) {
+			m := regex.FindStringSubmatch(commit.text)
+			if (m != nil) {
+				rl.commits[m[0]] = &commit
+			}
+		} else {
+			if (regex.MatchString(commit.text)) {
+				rl.commits[commit.text] = &commit
+			}
 		}
 	}
 	return nil
@@ -105,8 +112,8 @@ func gitCommand(outFile string, args ...string) error {
 
 var branchName *string = flag.String("b", "", "the branch to look for " +
 	"commits in")
-var regexStr *string = flag.String("r", "HADOOP-", "the regular " +
-	"expression to use to determine which commits to examine")
+var regexStr *string = flag.String("r", "(HDFS-[0123456789]*)[^0123456789]",
+	"the regular expression to use to determine which commits to examine")
 
 func main() {
 	flag.Parse()
@@ -114,6 +121,11 @@ func main() {
 	if (err != nil) {
 		fmt.Printf("Error compiling regular expression \"%s\":\n" +
 			"    %s\n", *regexStr, err)
+		os.Exit(1)
+	}
+	if (regex.NumSubexp() > 1) {
+		fmt.Printf("Can't handle more than one subexpression in the regular " +
+			" expression \"%s\"\n", *regexStr, err)
 		os.Exit(1)
 	}
 	if (*branchName == "") {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func NewRefLog() *RefLog {
 	return refLog
 }
 
-func (rl *RefLog) LoadFile(name string) error {
+func (rl *RefLog) LoadFile(name string, regex *regexp.Regexp) error {
 	lineno := 1
 	f, err := os.Open(name)
 	if err != nil {
@@ -53,7 +54,9 @@ func (rl *RefLog) LoadFile(name string) error {
 				"on line %d", lineno))
 		}
 		commit := Commit {parts[0], parts[1], lineno}
-		rl.commits[commit.text] = &commit
+		if (regex.MatchString(commit.text)) {
+			rl.commits[commit.text] = &commit
+		}
 	}
 	return nil
 }
@@ -102,9 +105,17 @@ func gitCommand(outFile string, args ...string) error {
 
 var branchName *string = flag.String("b", "", "the branch to look for " +
 	"commits in")
+var regexStr *string = flag.String("r", "HADOOP-", "the regular " +
+	"expression to use to determine which commits to examine")
 
 func main() {
 	flag.Parse()
+	regex, err := regexp.Compile(*regexStr)
+	if (err != nil) {
+		fmt.Printf("Error compiling regular expression \"%s\":\n" +
+			"    %s\n", *regexStr, err)
+		os.Exit(1)
+	}
 	if (*branchName == "") {
 		fmt.Printf("You must specify a branch to compare against using -b.\n")
 		os.Exit(1)
@@ -114,7 +125,7 @@ func main() {
 		fmt.Sprintf("/tmp/jirafun.2.%d", os.Getpid()) }
 	defer os.Remove(fileNames[0])
 	defer os.Remove(fileNames[1])
-	err := gitCommand(fileNames[1], "git", "rev-list",
+	err = gitCommand(fileNames[1], "git", "rev-list",
 		"--pretty=oneline", *branchName)
 	if err != nil {
 		fmt.Print(err)
@@ -127,12 +138,12 @@ func main() {
 		os.Exit(1)
 	}
 	refLogs := []*RefLog { NewRefLog(), NewRefLog() }
-	err = refLogs[0].LoadFile(fileNames[0])
+	err = refLogs[0].LoadFile(fileNames[0], regex)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	err = refLogs[1].LoadFile(fileNames[1])
+	err = refLogs[1].LoadFile(fileNames[1], regex)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)

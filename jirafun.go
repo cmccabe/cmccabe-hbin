@@ -22,17 +22,35 @@ func (c *Commit) String() string {
 	return fmt.Sprintf("%s %s", c.hash, c.text);
 }
 
+func (c *Commit) Match(regex *regexp.Regexp) *string {
+	if (regex.NumSubexp() == 1) {
+		m := regex.FindStringSubmatch(c.text)
+		if m == nil {
+			return nil
+		}
+		return &m[1]
+	} else {
+		if (!regex.MatchString(c.text)) {
+			return nil;
+		}
+		return &c.text
+	}
+	return nil
+}
+
 type RefLog struct {
 	commits map[string] *Commit
+	regex *regexp.Regexp
 }
 
-func NewRefLog() *RefLog {
-	refLog := new(RefLog)
-	refLog.commits = make(map[string] *Commit)
-	return refLog
+func NewRefLog(regex *regexp.Regexp) *RefLog {
+	rl := new(RefLog)
+	rl.commits = make(map[string] *Commit)
+	rl.regex = regex
+	return rl
 }
 
-func (rl *RefLog) LoadFile(name string, regex *regexp.Regexp) error {
+func (rl *RefLog) LoadFile(name string) error {
 	lineno := 1
 	f, err := os.Open(name)
 	if err != nil {
@@ -53,27 +71,21 @@ func (rl *RefLog) LoadFile(name string, regex *regexp.Regexp) error {
 			return errors.New(fmt.Sprintf("failed to find a space " +
 				"on line %d", lineno))
 		}
-		commit := Commit {parts[0], parts[1], lineno}
-		if (regex.NumSubexp() == 1) {
-			m := regex.FindStringSubmatch(commit.text)
-			if (m != nil) {
-				rl.commits[m[0]] = &commit
-			}
-		} else {
-			if (regex.MatchString(commit.text)) {
-				rl.commits[commit.text] = &commit
-			}
+		commit := Commit {parts[0], strings.TrimSpace(parts[1]), lineno}
+		key := commit.Match(rl.regex)
+		if (key != nil) {
+			rl.commits[*key] = &commit
 		}
 	}
 	return nil
 }
 
 func (rl *RefLog) GetMissing(alt *RefLog) *RefLog {
-	missing := NewRefLog()
-	for _, c := range alt.commits {
-		_, present := rl.commits[c.text]
+	missing := NewRefLog(rl.regex)
+	for k, c := range alt.commits {
+		_, present := rl.commits[k]
 		if (!present) {
-			missing.commits[c.text] = c
+			missing.commits[k] = c
 		}
 	}
 	return missing
@@ -89,7 +101,10 @@ func (rl *RefLog) String() string {
 	}
 	ret := ""
 	for _, v := range byLine {
-		ret += v.String()
+		if (rl.regex.NumSubexp() > 0) {
+			ret += *v.Match(rl.regex) + " "
+		}
+		ret += v.String() + "\n"
 	}
 	return ret;
 }
@@ -149,13 +164,13 @@ func main() {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	refLogs := []*RefLog { NewRefLog(), NewRefLog() }
-	err = refLogs[0].LoadFile(fileNames[0], regex)
+	refLogs := []*RefLog { NewRefLog(regex), NewRefLog(regex) }
+	err = refLogs[0].LoadFile(fileNames[0])
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	err = refLogs[1].LoadFile(fileNames[1], regex)
+	err = refLogs[1].LoadFile(fileNames[1])
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)

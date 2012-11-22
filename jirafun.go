@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func NewRefLog(regex *regexp.Regexp) *RefLog {
 	return rl
 }
 
-func (rl *RefLog) LoadFile(name string) error {
+func (rl *RefLog) LoadFile(name string, il *IgnoreList) error {
 	lineno := 1
 	f, err := os.Open(name)
 	if err != nil {
@@ -74,7 +75,10 @@ func (rl *RefLog) LoadFile(name string) error {
 		commit := Commit {parts[0], strings.TrimSpace(parts[1]), lineno}
 		key := commit.Match(rl.regex)
 		if (key != nil) {
-			rl.commits[*key] = &commit
+			_, ignored := il.ignores[*key]
+			if (!ignored) {
+				rl.commits[*key] = &commit
+			}
 		}
 	}
 	return nil
@@ -91,22 +95,57 @@ func (rl *RefLog) GetMissing(alt *RefLog) *RefLog {
 	return missing
 }
 
-//func (rl *RefLog) ReadIgnoreFile(name string) {
-//}
+type CommitSlice []*Commit
+func (arr CommitSlice) Len() int { return len(arr) }
+func (arr CommitSlice) Less(i, j int) bool { return arr[i].lineno < arr[j].lineno }
+func (arr CommitSlice) Swap(i, j int) { arr[i], arr[j] = arr[j], arr[i] }
 
 func (rl *RefLog) String() string {
-	byLine := make(map[int] *Commit)
+	byLine := make(CommitSlice, len(rl.commits))
+	i := 0
 	for _, c := range rl.commits {
-		byLine[c.lineno] = c
+		byLine[i] = c
+		i++
 	}
+	sort.Sort(byLine)
 	ret := ""
-	for _, v := range byLine {
+	for i = 0; i < len(byLine); i++ {
 		if (rl.regex.NumSubexp() > 0) {
-			ret += *v.Match(rl.regex) + " "
+			ret += *byLine[i].Match(rl.regex) + " "
 		}
-		ret += v.String() + "\n"
+		ret += byLine[i].String() + "\n"
 	}
 	return ret;
+}
+
+type IgnoreList struct {
+	ignores map[string] bool
+}
+
+func newIgnoreList() *IgnoreList {
+	il := new(IgnoreList)
+	il.ignores = make(map[string] bool)
+	return il
+}
+func (il *IgnoreList) ReadIgnoreFile(fileName string) error {
+	f, err := os.Open(fileName)
+	if (err != nil) {
+		return err
+	}
+	defer f.Close()
+	lineno := 1
+	for fileBuf := bufio.NewReader(f); ; lineno++ {
+		line, err := fileBuf.ReadString('\n')
+		if (err != nil) {
+			if (err == io.EOF) {
+				break
+			} else {
+				return err
+			}
+		}
+		il.ignores[strings.TrimSpace(line)] = true
+	}
+	return nil
 }
 
 func gitCommand(outFile string, args ...string) error {
@@ -129,6 +168,10 @@ var branchName *string = flag.String("b", "", "the branch to look for " +
 	"commits in")
 var regexStr *string = flag.String("r", "(HDFS-[0123456789]*)[^0123456789]",
 	"the regular expression to use to determine which commits to examine")
+var ignoreFile *string = flag.String("i", "",
+	"a file containing a newline-separated list of JIRAs to ignore.  If you " +
+	"are using a regex with a backrefernece, each line should contain the " +
+	"contents")
 
 func main() {
 	flag.Parse()
@@ -146,6 +189,14 @@ func main() {
 	if (*branchName == "") {
 		fmt.Printf("You must specify a branch to compare against using -b.\n")
 		os.Exit(1)
+	}
+	il := newIgnoreList()
+	if (*ignoreFile != "") {
+		err = il.ReadIgnoreFile(*ignoreFile)
+		if (err != nil) {
+			fmt.Printf("error reading ignore file: %s\n", err)
+			os.Exit(1)
+		}
 	}
 	fileNames := []string {
 		fmt.Sprintf("/tmp/jirafun.1.%d", os.Getpid()),
@@ -165,12 +216,12 @@ func main() {
 		os.Exit(1)
 	}
 	refLogs := []*RefLog { NewRefLog(regex), NewRefLog(regex) }
-	err = refLogs[0].LoadFile(fileNames[0])
+	err = refLogs[0].LoadFile(fileNames[0], il)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	err = refLogs[1].LoadFile(fileNames[1])
+	err = refLogs[1].LoadFile(fileNames[1], il)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)

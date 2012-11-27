@@ -36,7 +36,7 @@ run_cmd() {
 
 run_master() {
     echo "************************ master: $MASTER ********************"
-    run_cmd $master ssh $SSH_OPTS $MASTER $cmd
+    run_cmd $MASTER ssh $SSH_OPTS $MASTER $cmd
     [ $para -ne 0 ] && echo "[to $MASTER.para.txt]"
 }
 
@@ -44,11 +44,12 @@ run_slaves() {
     for slave in $SLAVES; do
         echo "************************ slave: $slave ********************" $ret
         run_cmd $slave ssh $SSH_OPTS $slave $cmd
-        [ $para -ne 0 ] && echo "[to $MASTER.para.txt]"
+        [ $para -ne 0 ] && echo "[to $slave.para.txt]"
     done
 }
 
 upload_src_master() {
+    [ $para -ne 0 ] && die "parallelism not support for upload to master.  -h for help."
     set -x
     rsync -e "ssh $SSH_OPTS" -avi --exclude '*.jar' \
 --exclude '*.class' \
@@ -97,17 +98,14 @@ fi
 if [ $action = "run_all" ]; then
     run_master
     run_slaves
-    exit 0
 fi
 if [ $action = "run_master" ]; then
     run_master
-    exit 0
 fi
 if [ $action = "run_slaves" ]; then
     run_slaves
-    exit 0
 fi
 if [ $action = "upload_src_master" ]; then
     upload_src_master
-    exit 0
 fi
+wait

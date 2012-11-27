@@ -23,6 +23,20 @@ func (c *Commit) String() string {
 	return fmt.Sprintf("%s %s", c.hash, c.text);
 }
 
+func CommitFromLine(line string, lineno int) (*Commit, error) {
+	if ((len(line) > 0) && (line[0] == '#')) {
+		// this is a comment line; ignore it
+		return nil, nil
+	}
+	parts := strings.SplitAfterN(line, " ", 2)
+	if (len(parts) < 2) {
+		return nil, errors.New(fmt.Sprintf("failed to find a space " +
+			"on line %d", lineno))
+	}
+	commit := Commit {parts[0], strings.TrimSpace(parts[1]), lineno}
+	return &commit, nil
+}
+
 func (c *Commit) Match(regex *regexp.Regexp) *string {
 	if (regex.NumSubexp() == 1) {
 		m := regex.FindStringSubmatch(c.text)
@@ -67,17 +81,19 @@ func (rl *RefLog) LoadFile(name string, il *IgnoreList) error {
 				return err
 			}
 		}
-		parts := strings.SplitAfterN(line, " ", 2)
-		if (len(parts) < 2) {
-			return errors.New(fmt.Sprintf("failed to find a space " +
-				"on line %d", lineno))
+		var commit *Commit
+		commit, err = CommitFromLine(line, lineno)
+		if (err != nil) {
+			return err
 		}
-		commit := Commit {parts[0], strings.TrimSpace(parts[1]), lineno}
+		if (commit == nil) {
+			continue
+		}
 		key := commit.Match(rl.regex)
 		if (key != nil) {
 			_, ignored := il.ignores[*key]
 			if (!ignored) {
-				rl.commits[*key] = &commit
+				rl.commits[*key] = commit
 			}
 		}
 	}
@@ -127,7 +143,8 @@ func newIgnoreList() *IgnoreList {
 	il.ignores = make(map[string] bool)
 	return il
 }
-func (il *IgnoreList) ReadIgnoreFile(fileName string) error {
+func (il *IgnoreList) ReadIgnoreFile(fileName string,
+		regex *regexp.Regexp) error {
 	f, err := os.Open(fileName)
 	if (err != nil) {
 		return err
@@ -143,7 +160,17 @@ func (il *IgnoreList) ReadIgnoreFile(fileName string) error {
 				return err
 			}
 		}
-		il.ignores[strings.TrimSpace(line)] = true
+		var commit *Commit
+		commit, err = CommitFromLine(line, lineno)
+		if (err != nil) {
+			return err
+		} else if (commit == nil) {
+			continue
+		}
+		key := commit.Match(regex)
+		if (key != nil) {
+			il.ignores[*key] = true
+		}
 	}
 	return nil
 }
@@ -192,7 +219,7 @@ func main() {
 	}
 	il := newIgnoreList()
 	if (*ignoreFile != "") {
-		err = il.ReadIgnoreFile(*ignoreFile)
+		err = il.ReadIgnoreFile(*ignoreFile, regex)
 		if (err != nil) {
 			fmt.Printf("error reading ignore file: %s\n", err)
 			os.Exit(1)

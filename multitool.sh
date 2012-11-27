@@ -58,23 +58,9 @@ upload_src_master() {
 $cmd $MASTER:$cmd
 }
 
-MASTER="c2018.halxg.cloudera.com"
-SLAVES="\
-c2004.halxg.cloudera.com \
-c2005.halxg.cloudera.com \
-c2006.halxg.cloudera.com \
-c2007.halxg.cloudera.com \
-c2008.halxg.cloudera.com \
-c2009.halxg.cloudera.com \
-c2010.halxg.cloudera.com \
-c2011.halxg.cloudera.com \
-c2012.halxg.cloudera.com \
-c2013.halxg.cloudera.com \
-c2014.halxg.cloudera.com \
-c2015.halxg.cloudera.com \
-c2016.halxg.cloudera.com \
-c2017.halxg.cloudera.com \
-"
+[ -v MASTER ] || die "you must set MASTER to the hostname of the master node"
+[ -v SLAVES ] || die "you must set SLAVES to a whitespace-separated list of \
+the hostnames of the slave nodes"
 SSH_OPTS="-oStrictHostKeyChecking=no "
 
 action="none"

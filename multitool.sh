@@ -16,6 +16,7 @@ usage() {
 $0: do hadoop testing on a cluster
 
 -a [cmd]   run a command on all nodes
+-A         abort on any failures (can't be used with -P)
 -h         this help message
 -m [cmd]   run a command on the master node
 -P         parallelize this operation
@@ -29,6 +30,10 @@ run_cmd() {
     shift
     if [ $para -eq 0 ]; then
         $@
+        rval=$?
+        if [ $abort_on_fail -ne 0 ]; then
+            [ $rval -ne 0 ] && die "command failed with error $rval"
+        fi
     else
         &> $fname $@ &
     fi
@@ -51,11 +56,14 @@ run_slaves() {
 upload_src_master() {
     [ $para -ne 0 ] && die "parallelism not support for upload to master.  -h for help."
     set -x
-    rsync -e "ssh $SSH_OPTS" -avi --exclude '*.jar' \
+    rsync -e "ssh $SSH_OPTS" -aviL --exclude '*.jar' \
 --exclude '*.class' \
 --exclude '.git' \
 --exclude '*.tar.gz' \
 $cmd $MASTER:$cmd
+    if [ $abort_on_fail -ne 0 ]; then
+        [ $rval -ne 0 ] && die "command failed with error $rval"
+    fi
 }
 
 [ -v MASTER ] || die "you must set MASTER to the hostname of the master node"
@@ -63,10 +71,12 @@ $cmd $MASTER:$cmd
 the hostnames of the slave nodes"
 SSH_OPTS="-oStrictHostKeyChecking=no "
 
+abort_on_fail=0
 action="none"
 para=0
-while getopts  "a:hm:Ps:u:" flag; do
+while getopts  "Aa:hm:Ps:u:" flag; do
     case $flag in
+    A) abort_on_fail=1;;
     a) action="run_all"; cmd=$OPTARG;;
     h) usage; exit 0;;
     m) action="run_master"; cmd=$OPTARG;;
@@ -79,6 +89,7 @@ done
 shift $((OPTIND-1))
 [ $action = "none" ] && die "you must supply an action... -h for help."
 if [ $para -eq 1 ]; then
+    [ $abort_on_fail -eq 1 ] && die "can't combine -A (abort on failures) and -P (parallelize)"
     rm -f *.para.txt || die "failed to remove *.para.txt files"
 fi
 if [ $action = "run_all" ]; then

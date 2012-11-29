@@ -18,6 +18,8 @@ $0: do hadoop testing on a cluster
 -a [cmd]   run a command on all nodes
 -A         abort on any failures (can't be used with -P)
 -h         this help message
+-I         introduce all the nodes to each other by making them ssh to 
+           each other.
 -m [cmd]   run a command on the master node
 -P         parallelize this operation
 -s [cmd]   run a command on all nodes except the master
@@ -53,6 +55,16 @@ run_slaves() {
     done
 }
 
+run_introduce() {
+    all="$MASTER $SLAVES"
+    for a in $all; do
+        for b in $all; do
+            #echo ssh $SSH_OPTS $a "ssh -oStrictHostKeyChecking=no $b echo $a:$b"
+            ssh $SSH_OPTS $a "ssh -oStrictHostKeyChecking=no $b echo $a:$b" &
+        done
+    done
+}
+
 upload_src_master() {
     [ $para -ne 0 ] && die "parallelism not support for upload to master.  -h for help."
     set -x
@@ -74,11 +86,12 @@ SSH_OPTS="-oStrictHostKeyChecking=no "
 abort_on_fail=0
 action="none"
 para=0
-while getopts  "Aa:hm:Ps:u:" flag; do
+while getopts  "Aa:hIm:Ps:u:" flag; do
     case $flag in
     A) abort_on_fail=1;;
     a) action="run_all"; cmd=$OPTARG;;
     h) usage; exit 0;;
+    I) action="introduce";;
     m) action="run_master"; cmd=$OPTARG;;
     P) para=1;;
     s) action="run_slaves"; cmd=$OPTARG;;
@@ -91,6 +104,9 @@ shift $((OPTIND-1))
 if [ $para -eq 1 ]; then
     [ $abort_on_fail -eq 1 ] && die "can't combine -A (abort on failures) and -P (parallelize)"
     rm -f *.para.txt || die "failed to remove *.para.txt files"
+fi
+if [ $action = "introduce" ]; then
+    run_introduce
 fi
 if [ $action = "run_all" ]; then
     run_master

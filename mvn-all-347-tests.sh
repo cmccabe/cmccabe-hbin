@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mvn test -Dtest=TestDomainSocket,TestShortCircuitLocalRead,TestParallelShortCircuitRead,TestParallelRead,TestPersistBlocks,TestPeerCache,TestFileInputStreamCache,TestParallelUnixDomainRead,TestParallelShortCircuitReadNoChecksum,TestBlockReaderLocal

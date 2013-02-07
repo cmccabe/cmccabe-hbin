@@ -58,7 +58,7 @@ run_slaves() {
 run_introduce() {
     all="$MASTER $SLAVES"
     for a in $all; do
-        for b in $all; do
+        for b in $all localhost 127.0.0.1 0.0.0.0; do
             #echo ssh $SSH_OPTS $a "ssh -oStrictHostKeyChecking=no $b echo $a:$b"
             ssh $SSH_OPTS $a "ssh -oStrictHostKeyChecking=no $b echo $a:$b" &
         done

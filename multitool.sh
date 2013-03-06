@@ -79,7 +79,7 @@ $cmd $MASTER:$cmd
 }
 
 [ "x$MASTER" == "x" ] && die "you must set MASTER to the hostname of the master node"
-[ "x$SLAVES" == "x"] && die "you must set SLAVES to a whitespace-separated list of \
+[ "x$SLAVES" == "x" ] && die "you must set SLAVES to a whitespace-separated list of \
 the hostnames of the slave nodes"
 SSH_OPTS="-oStrictHostKeyChecking=no "
 

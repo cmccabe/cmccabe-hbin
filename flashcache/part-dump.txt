@@ -1,0 +1,19 @@
+# partition table of /dev/fioa
+unit: sectors
+
+/dev/fioa1 : start=       63, size=294182217, Id= 5
+/dev/fioa2 : start=        0, size=        0, Id= 0
+/dev/fioa3 : start=        0, size=        0, Id= 0
+/dev/fioa4 : start=        0, size=        0, Id= 0
+/dev/fioa5 : start=      126, size=196121394, Id=83
+/dev/fioa6 : start=196121583, size=196121457, Id=83
+/dev/fioa7 : start=392243103, size=196121457, Id=83
+/dev/fioa8 : start=588364623, size=196121457, Id=83
+/dev/fioa9 : start=784486143, size=196121457, Id=83
+/dev/fioa10: start=980607663, size=196121457, Id=83
+/dev/fioa11: start=1176729183, size=196121457, Id=83
+/dev/fioa12: start=1372850703, size=196121457, Id=83
+/dev/fioa13: start=1568972223, size=196121457, Id=83
+/dev/fioa14: start=1765093743, size=196121457, Id=83
+/dev/fioa15: start=1961215263, size=196121457, Id=83
+/dev/fioa16: start=2157336783, size=196121457, Id=83

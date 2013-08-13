@@ -42,7 +42,7 @@ export CLASSPATH="./:$conf_dir:$CLASSPATH"
 libhadoop_so_path="$install_dir/lib/native/libhadoop.so"
 [ -e "${libhadoop_so_path}" ] \
     || die "can't locate libhadoop.so at ${libhadoop_so_path}"
-export LD_LIBRARY_PATH="$install_dir/lib/native"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$install_dir/lib/native"
 
 # our log4j.properties has this line:
 # log4j.appender.file.File=${hadoop.log.dir}/${hadoop.log.file}

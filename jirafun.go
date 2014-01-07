@@ -17,10 +17,13 @@ type Commit struct {
 	hash string
 	text string
 	lineno int
+	associatedSvnText string
 }
 
 func (c *Commit) String() string {
-	return fmt.Sprintf("%s %s", c.hash, c.text);
+	return fmt.Sprintf("%s%s %s%s %s%s %s%s %s",
+		"???", *fieldSeparator, *branchName, *fieldSeparator, c.hash,
+		*fieldSeparator, c.text, *fieldSeparator, c.associatedSvnText);
 }
 
 func CommitFromLine(line string, lineno int) (*Commit, error) {
@@ -33,7 +36,7 @@ func CommitFromLine(line string, lineno int) (*Commit, error) {
 		return nil, errors.New(fmt.Sprintf("failed to find a space " +
 			"on line %d", lineno))
 	}
-	commit := Commit {parts[0], strings.TrimSpace(parts[1]), lineno}
+	commit := Commit { parts[0], strings.TrimSpace(parts[1]), lineno, "" }
 	return &commit, nil
 }
 
@@ -51,6 +54,61 @@ func (c *Commit) Match(regex *regexp.Regexp) *string {
 		return &c.text
 	}
 	return nil
+}
+
+func isNumeric(text string) bool {
+	for _, cp := range(text) {
+		if (cp != '0') && (cp != '1') && (cp != '2') &&
+			(cp != '3') && (cp != '4') && (cp != '5') &&
+			(cp != '6') && (cp != '7') && (cp != '8') &&
+			(cp != '9') {
+			return false;
+		}
+	}
+	return true
+}
+
+func (c *Commit) PopulateSvnText(jiraId string) {
+	words := strings.Fields(c.text)
+	ret := ""
+	prefix := ""
+	for idx := range(words) {
+		word := words[idx]
+		if (len(word) > 1) && (word[0] == 'r') && isNumeric(word[1:]) {
+			ret = ret + prefix + revisionToSvnText(word, jiraId)
+			prefix = ", "
+		}
+	}
+	//fmt.Fprintf(os.Stderr, "%s\n", "c.associatedSvnText = \"" + ret + "\"")
+	if ret == "" {
+		ret = "(none)"
+	}
+	c.associatedSvnText = ret
+}
+
+func revisionToSvnText(rev string, jiraId string) string {
+	if (*associatedSvnRepo == "") {
+		return ""
+	}
+	cmd := exec.Command("svn")
+	cmd.Args = []string { "svn", "log", "-r", rev }
+	cmd.Stderr = os.Stderr
+	cmd.Dir = *associatedSvnRepo
+	pipe, err := cmd.StdoutPipe(); if err != nil {
+		panic(err.Error())
+	}
+	scanner := bufio.NewScanner(pipe)
+	cmd.Start()
+	defer cmd.Wait()
+	for scanner.Scan() {
+		text := scanner.Text()
+		if (strings.Contains(text, jiraId)) {
+			return strings.TrimSpace(text)
+		}
+	}
+	fmt.Fprintf(os.Stderr, "failed to find information about %s " +
+		"in svn rev %s\n", jiraId, rev)
+	return "(not found)"
 }
 
 type RefLog struct {
@@ -111,6 +169,12 @@ func (rl *RefLog) GetMissing(alt *RefLog) *RefLog {
 	return missing
 }
 
+func (rl *RefLog) PopulateSvnText() {
+	for jiraId, c := range rl.commits {
+		c.PopulateSvnText(jiraId)
+	}
+}
+
 type CommitSlice []*Commit
 func (arr CommitSlice) Len() int { return len(arr) }
 func (arr CommitSlice) Less(i, j int) bool { return arr[i].lineno < arr[j].lineno }
@@ -127,7 +191,9 @@ func (rl *RefLog) String() string {
 	ret := ""
 	for i = 0; i < len(byLine); i++ {
 		if (rl.regex.NumSubexp() > 0) {
-			ret += *byLine[i].Match(rl.regex) + " "
+			ret += *byLine[i].Match(rl.regex) + *fieldSeparator + " "
+		} else {
+			ret += "HDFS-????" + *fieldSeparator + " "
 		}
 		ret += byLine[i].String() + "\n"
 	}
@@ -190,7 +256,6 @@ func gitCommand(outFile string, args ...string) error {
 	}
 	return nil
 }
-
 var branchName *string = flag.String("b", "", "the branch to look for " +
 	"commits in")
 var regexStr *string = flag.String("r", "(HDFS-[0123456789]*)[^0123456789]",
@@ -199,6 +264,10 @@ var ignoreFile *string = flag.String("i", "",
 	"a file containing a newline-separated list of JIRAs to ignore.  If you " +
 	"are using a regex with a backrefernece, each line should contain the " +
 	"contents")
+var associatedSvnRepo *string = flag.String("s", "",
+	"optional local directory with an associated subversion repository.  " +
+	"This will be used to make 'merging change rXYZ messages' more helpful.")
+var fieldSeparator *string = flag.String("f", "❆", "field separator to use.")
 
 func main() {
 	flag.Parse()
@@ -254,5 +323,11 @@ func main() {
 		os.Exit(1)
 	}
 	missing := refLogs[0].GetMissing(refLogs[1])
+	missing.PopulateSvnText()
+	fmt.Printf("JIRA%s status%s branch%s git hash%s commit text%s" +
+		"svn auxillary text\n",
+		*fieldSeparator, *fieldSeparator, *fieldSeparator,
+		*fieldSeparator, *fieldSeparator)
+
 	fmt.Print(missing.String())
 }

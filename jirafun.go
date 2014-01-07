@@ -77,6 +77,9 @@ func (c *Commit) PopulateSvnText(jiraId string) {
 		if (len(word) > 1) && (word[0] == 'r') && isNumeric(word[1:]) {
 			ret = ret + prefix + revisionToSvnText(word, jiraId)
 			prefix = ", "
+		} else if (len(word) > 6) && isNumeric(word) {
+			ret = ret + prefix + revisionToSvnText("r" + word, jiraId)
+			prefix = ", "
 		}
 	}
 	//fmt.Fprintf(os.Stderr, "%s\n", "c.associatedSvnText = \"" + ret + "\"")
@@ -88,7 +91,7 @@ func (c *Commit) PopulateSvnText(jiraId string) {
 
 func revisionToSvnText(rev string, jiraId string) string {
 	if (*associatedSvnRepo == "") {
-		return ""
+		return "(no svn repo associated)"
 	}
 	cmd := exec.Command("svn")
 	cmd.Args = []string { "svn", "log", "-r", rev }
@@ -108,7 +111,7 @@ func revisionToSvnText(rev string, jiraId string) string {
 	}
 	fmt.Fprintf(os.Stderr, "failed to find information about %s " +
 		"in svn rev %s\n", jiraId, rev)
-	return "(not found)"
+	return "(no info found for " + rev + ")"
 }
 
 type RefLog struct {

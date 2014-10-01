@@ -25,6 +25,10 @@ elif (branch == "branch-2.1-beta"):
     branch_suffix = "-b2.1"
 elif (branch == "HDFS-4949"):
     branch_suffix = "-caching"
+elif (branch == "HADOOP-10388"):
+    branch_suffix = "-pnative"
+elif (branch == "fs-encryption"):
+    branch_suffix = "-fs-enc"
 else:
     raise RuntimeError("can't understand branch %s" % branch)
 overwrite  = False

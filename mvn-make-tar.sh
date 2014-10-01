@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(dirname "$0")"
-source "$SCRIPT_DIR/mvn-common-env.sh"
+#source "$SCRIPT_DIR/mvn-common-env.sh"
 
 rm -f ./hadoop-dist/target/hadoop-*-SNAPSHOT.tar.gz
 

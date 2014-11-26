@@ -27,6 +27,8 @@ elif (branch == "HDFS-4949"):
     branch_suffix = "-caching"
 elif (branch == "HADOOP-10388"):
     branch_suffix = "-pnative"
+elif (branch == "HDFS-6994"):
+    branch_suffix = "-pnative"
 elif (branch == "fs-encryption"):
     branch_suffix = "-fs-enc"
 else:
@@ -65,7 +67,7 @@ if (overwrite):
 else:
     next_patch_num = highest_patch_num + 1
 commit = subprocess.check_output([ "git", "merge-base", "HEAD", branch]).rstrip()
-cmd = [ "git", "diff", "--binary", "--no-prefix", commit, "HEAD" ]
+cmd = [ "git", "diff", "--binary", commit, "HEAD" ]
 outfile = "%s/%s%s.%03d.patch" % (dir_path, jira, branch_suffix, next_patch_num)
 print " ".join(cmd) + " > " + outfile
 patch = subprocess.check_output(cmd)

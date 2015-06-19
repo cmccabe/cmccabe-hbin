@@ -90,7 +90,7 @@ print " ".join(cmd) + " > " + outfile
 patch = run_check_output(cmd)
 f = open(outfile, "w")
 try:
-    f.write(patch)
+    f.write(patch + "\n")
 finally:
     f.close()
 os.system("less '" + outfile + "'")

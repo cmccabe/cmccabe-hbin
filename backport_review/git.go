@@ -35,12 +35,6 @@ type Commit struct {
 	lineno int
 }
 
-//func (c *Commit) String() string {
-//	return fmt.Sprintf("%s%s %s%s %s%s %s%s %s",
-//		"???", *fieldSeparator, *branchName, *fieldSeparator, c.hash,
-//		*fieldSeparator, c.text, *fieldSeparator, c.associatedSvnText);
-//}
-
 func CommitFromLine(line string, lineno int) (*Commit, error) {
 	if ((len(line) > 0) && (line[0] == '#')) {
 		// this is a comment line; ignore it
@@ -69,18 +63,6 @@ func (c *Commit) Match(regex *regexp.Regexp) *string {
 		return &c.text
 	}
 	return nil
-}
-
-func isNumeric(text string) bool {
-	for _, cp := range(text) {
-		if (cp != '0') && (cp != '1') && (cp != '2') &&
-			(cp != '3') && (cp != '4') && (cp != '5') &&
-			(cp != '6') && (cp != '7') && (cp != '8') &&
-			(cp != '9') {
-			return false;
-		}
-	}
-	return true
 }
 
 type RefLog struct {

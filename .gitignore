@@ -54,3 +54,6 @@ ncscope.*
 *.orig
 *~
 \#*#
+asf-headerize
+backport_review/backport_review
+chop-garbage-before-asf

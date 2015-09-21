@@ -20,6 +20,7 @@ package main
 import (
 	"fmt"
 	"flag"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -40,12 +41,12 @@ type Branch struct {
 	refLog *RefLog
 }
 
-func LoadBranch(name string, regex *regexp.Regexp) (*Branch, error) {
+func LoadBranch(name string, regex *regexp.Regexp, tempDir string) (*Branch, error) {
 	brn := &Branch {
 		name: name,
 	}
-	tempFileName := fmt.Sprintf("/tmp/jirafun.%d.%s", os.Getpid(), name)
-	defer os.Remove(tempFileName)
+	noSlashName := strings.Replace(name, "/", "_", -1)
+	tempFileName := fmt.Sprintf("%s%s%s", tempDir, os.PathSeparator, noSlashName)
 	err := gitCommand(tempFileName, "git", "rev-list",
 			"--pretty=oneline", brn.name)
 	if err != nil {
@@ -136,8 +137,15 @@ func main() {
 		os.Exit(1)
 	}
 	branches := make([]*Branch, len(branchNameArr))
+	var tempDir string
+	tempDir, err = ioutil.TempDir("", "backport_review")
+	if err != nil {
+		fmt.Printf("Error creating TempDir: %s\n", err.Error())
+		os.Exit(1)
+	}
+	defer os.RemoveAll(tempDir)
 	for b := range(branchNameArr) {
-		branches[b], err = LoadBranch(branchNameArr[b], regex)
+		branches[b], err = LoadBranch(branchNameArr[b], regex, tempDir)
 		if err != nil {
 			fmt.Printf("Error loading branch %s: %s\n",
 				branchNameArr[b], err.Error())

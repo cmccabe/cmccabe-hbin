@@ -1,6 +1,9 @@
 #!/bin/bash
 
+export JPS="/usr/java/jdk1.7.0_67-cloudera/bin/jps"
+
 export HOSTS="a1008.halxg.cloudera.com \
+c1604.halxg.cloudera.com \
 a1009.halxg.cloudera.com \
 a1010.halxg.cloudera.com \
 a1012.halxg.cloudera.com \
@@ -321,6 +324,40 @@ run() {
     wait
 }
 
+kill_jproc_host() {
+    echo "*** kill_jproc_host ${@}"
+    h="${1}"
+    PATTERN="${2}"
+    shift
+    shift
+    ssh -o StrictHostKeyChecking=no "$h" sudo pkill -f "java.*${PATTERN}"
+}
+
+kill_jproc() {
+    PATTERN="${1}"
+    shift
+    for h in $HOSTS; do
+        kill_jproc_host "${h}" "${PATTERN}" &>> "${h}.txt" &
+    done
+    wait
+}
+
+jps_host() {
+    echo "*** jps ${@}"
+    h="${1}"
+    shift
+    shift
+    ssh -o StrictHostKeyChecking=no "$h" sudo "$JPS" || die "jps failed"
+}
+
+jps() {
+    shift
+    for h in $HOSTS; do
+        jps_host "${h}" "${PATTERN}" &>> "${h}.txt" &
+    done
+    wait
+}
+
 ACTION="${1}"
 shift
 case ${ACTION} in
@@ -330,6 +367,14 @@ case ${ACTION} in
         ;;
     run)
         run "${@}"
+        exit 0
+        ;;
+    kill_jproc)
+        kill_jproc "${@}"
+        exit 0
+        ;;
+    jps)
+        jps "${@}"
         exit 0
         ;;
     "")

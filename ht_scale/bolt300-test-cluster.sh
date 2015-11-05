@@ -311,7 +311,7 @@ run_host() {
     h="${1}"
     shift
     echo "*** ${h}: ${@}"
-    ssh -o StrictHostKeyChecking=no "$h" "${@}"
+    ssh -o StrictHostKeyChecking=no "$h" "${@}" || die "command failed"
 }
 
 run() {

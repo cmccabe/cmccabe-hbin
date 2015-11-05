@@ -307,11 +307,29 @@ sync() {
     wait
 }
 
+run_host() {
+    h="${1}"
+    shift
+    echo "*** ${h}: ${@}"
+    ssh -o StrictHostKeyChecking=no "$h" "${@}"
+}
+
+run() {
+    for h in $HOSTS; do
+        run_host "${h}" "${@}" &>> "${h}.txt" &
+    done
+    wait
+}
+
 ACTION="${1}"
 shift
 case ${ACTION} in
     sync)
         sync "${@}"
+        exit 0
+        ;;
+    run)
+        run "${@}"
         exit 0
         ;;
     "")

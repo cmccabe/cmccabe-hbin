@@ -292,9 +292,9 @@ sync_host() {
     RPM_NAME="${1}"
     h="${2}"
     echo "*** ${h}: installing ${RPM_NAME}"
-    ssh -o StrictHostKeyChecking=no "$HUSER@$h" "sudo rpm -e 'htrace-htraced-*'" || die "rpm -e error"
     rsync --progress -avz -e 'ssh -o StrictHostKeyChecking=no' "${RPM_NAME}" $h:~/r.rpm || die "rsync error"
-    sshpass -p ${HPASS} ssh -o StrictHostKeyChecking=no "$HUSER@$h" "rpm -v -i --nodeps r.rpm" || die "failed to install rpm on $h"
+    ssh -o StrictHostKeyChecking=no "$h" "sudo rpm -e 'htrace-htraced-*'"
+    ssh -o StrictHostKeyChecking=no "$h" "sudo rpm -v -i --nodeps r.rpm" || die "failed to install rpm on $h"
 }
 
 sync() {

@@ -283,23 +283,18 @@ c2436.halxg.cloudera.com \
 c2438.halxg.cloudera.com \
 "
 
-export HUSER="root"
-
 die() {
     echo $@
     exit 1
 }
 
-[ "x${HPASS}" == "x" ] && die "you must set HPASS"
-
 sync_host() {
     RPM_NAME="${1}"
     h="${2}"
     echo "*** ${h}: installing ${RPM_NAME}"
-    sleep 1
-#    sshpass -p ${HPASS} ssh -o StrictHostKeyChecking=no "$HUSER@$h" "rpm -e 'htrace-htraced-*'"
-#    sshpass -p ${HPASS} rsync --progress -avz -e 'ssh -o StrictHostKeyChecking=no' "${RPM_NAME}" $HUSER@$h:~/r.rpm
-#    sshpass -p ${HPASS} ssh -o StrictHostKeyChecking=no "$HUSER@$h" "rpm -v -i --nodeps r.rpm" || die "failed to install rpm on $h"
+    ssh -o StrictHostKeyChecking=no "$HUSER@$h" "sudo rpm -e 'htrace-htraced-*'"
+    rsync --progress -avz -e 'ssh -o StrictHostKeyChecking=no' "${RPM_NAME}" $h:~/r.rpm
+    sshpass -p ${HPASS} ssh -o StrictHostKeyChecking=no "$HUSER@$h" "rpm -v -i --nodeps r.rpm" || die "failed to install rpm on $h"
 }
 
 sync() {

@@ -351,15 +351,50 @@ jps_host() {
 }
 
 jps() {
-    shift
     for h in $HOSTS; do
         jps_host "${h}" "${PATTERN}" &>> "${h}.txt" &
     done
     wait
 }
 
+node_echo_hash() {
+    HOSTNAME_HASH=0x`hostname | md5sum | head -c 8`
+    echo -n "hostname `hostname` hashes to $HOSTNAME_HASH.  Mod 10 is "
+    echo $(($HOSTNAME_HASH % 10))
+}
+
+map_host() {
+    echo "*** map ${@}"
+    h="${1}"
+    CMD="${2}"
+    SRC="${BASH_SOURCE[0]}"
+    shift
+    shift
+    rsync --progress -avz -e 'ssh -o StrictHostKeyChecking=no' "${SRC}" $h:~/test.sh || die "rsync error"
+    ssh -o StrictHostKeyChecking=no "$h" bash ~/test.sh "${CMD}" "${@}" || die "bash test.sh ${@} failed"
+}
+
+map() {
+    CMD=${1}
+    [ "x$CMD" == "x" ] && die "map requires at least one argument: \
+the name of the command to run on each node."
+    shift
+    for h in $HOSTS; do
+        map_host "${h}" "${CMD}" "${@}" &>> "${h}.txt" &
+    done
+    wait
+}
+
+# Kill all subprocesses on exit (doesn't work with kill -9, of course)
+trap 'sleep & kill $(jobs -p)' EXIT
+
 ACTION="${1}"
 shift
+if [[ ${ACTION} == node* ]]; then
+    ${ACTION} "${@}"
+    exit 0
+fi
+
 case ${ACTION} in
     sync)
         sync "${@}"
@@ -377,6 +412,10 @@ case ${ACTION} in
         jps "${@}"
         exit 0
         ;;
+    map)
+        map "${@}"
+        exit 0
+        ;;
     "")
         exit 0
         ;;
@@ -392,6 +431,7 @@ sync [htrace-rpm]: sync the given htrace RPM to the cluster nodes.
 run [command]: run the given command on all nodes.
 kill_jproc [pattern]: kill java processes matching the given pattern on all nodes.
 jps: show the java processes running on all nodes by running jps.
+map [command]: run the map command on each host in the cluster.
 EOF
         exit 0
         ;;

@@ -358,9 +358,35 @@ jps() {
 }
 
 node_echo_hash() {
-    HOSTNAME_HASH=0x`hostname | md5sum | head -c 8`
     echo -n "hostname `hostname` hashes to $HOSTNAME_HASH.  Mod 10 is "
     echo $(($HOSTNAME_HASH % 10))
+}
+
+run_select() {
+    echo "*** select ${@}"
+    NUM="${1}"
+    shift
+    [ "${NUM}" -eq "${NUM}" ] &>/dev/null || die "select must be passed a number"
+    if [ $(($HOSTNAME_HASH % $NUM)) -eq 0 ]; then
+        echo "Node was selected."
+        SRC="${BASH_SOURCE[0]}"
+        exec "${SRC}" "${@}"
+    else
+        echo "Node was not selected."
+    fi
+}
+
+node_create_random_local() {
+    HOSTNAME_HASH=0x`hostname | md5sum | head -c 10`
+    echo $(($HOSTNAME_HASH % 10))
+    TEST_DIR="/tmp/$$.$RANDOM.$RANDOM"
+    mkdir -p "${TEST_DIR}" || die "failed to mkdir ${TEST_DIR}"
+    trap "rm -rf ${TEST_DIR}" EXIT
+    NUM_RANDOM_FILES=100
+    echo "creating random local directory ${TEST_DIR}"
+    for i in `seq 1 $NUM_RANDOM_FILES`; do
+        head -c $(($RANDOM % 3000)) /dev/urandom | base64 > "${TEST_DIR}/$i"
+    done
 }
 
 map_host() {
@@ -387,6 +413,9 @@ the name of the command to run on each node."
 
 # Kill all subprocesses on exit (doesn't work with kill -9, of course)
 trap 'sleep & kill $(jobs -p)' EXIT
+
+# Determine the hostname hash
+HOSTNAME_HASH=0x`hostname | md5sum | head -c 10`
 
 ACTION="${1}"
 shift
@@ -416,6 +445,10 @@ case ${ACTION} in
         map "${@}"
         exit 0
         ;;
+    select)
+        run_select "${@}"
+        exit 0
+        ;;
     "")
         exit 0
         ;;
@@ -432,6 +465,7 @@ run [command]: run the given command on all nodes.
 kill_jproc [pattern]: kill java processes matching the given pattern on all nodes.
 jps: show the java processes running on all nodes by running jps.
 map [command]: run the map command on each host in the cluster.
+select [num] [command]: select 1 / num nodes to run the given command.
 EOF
         exit 0
         ;;

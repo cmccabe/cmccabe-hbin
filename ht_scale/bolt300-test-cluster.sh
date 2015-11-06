@@ -381,6 +381,18 @@ case ${ACTION} in
         exit 0
         ;;
     *)
-        echo "unknown action ${ACTION}"
+        cat <<EOF
+bolt300-test-cluster.sh: unknown action ${ACTION}
+
+Script results are appended to files-- one per host.
+Search for the string 'FAIL' to identify failures.
+
+Known actions:
+sync [htrace-rpm]: sync the given htrace RPM to the cluster nodes.
+run [command]: run the given command on all nodes.
+kill_jproc [pattern]: kill java processes matching the given pattern on all nodes.
+jps: show the java processes running on all nodes by running jps.
+EOF
+        exit 0
         ;;
 esac

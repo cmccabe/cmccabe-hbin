@@ -291,6 +291,11 @@ die() {
     exit 1
 }
 
+run_or_die() {
+    echo "$HOSTNAME: ${@}"
+    "${@}" || die "${@}"
+}
+
 sync_host() {
     RPM_NAME="${1}"
     h="${2}"
@@ -379,7 +384,7 @@ run_select() {
 node_create_random_local() {
     HOSTNAME_HASH=0x`hostname | md5sum | head -c 10`
     echo $(($HOSTNAME_HASH % 10))
-    TEST_DIR="/tmp/$$.$RANDOM.$RANDOM"
+    export TEST_DIR="/tmp/$$.$RANDOM.$RANDOM"
     mkdir -p "${TEST_DIR}" || die "failed to mkdir ${TEST_DIR}"
     trap "rm -rf ${TEST_DIR}" EXIT
     NUM_RANDOM_FILES=100
@@ -387,6 +392,11 @@ node_create_random_local() {
     for i in `seq 1 $NUM_RANDOM_FILES`; do
         head -c $(($RANDOM % 3000)) /dev/urandom | base64 > "${TEST_DIR}/$i"
     done
+}
+
+node_copyfromlocal() {
+    node_create_random_local
+    run_or_die hadoop fs -copyFromLocal "${TEST_DIR}" "/tmp/${HOSTNAME}.$RANDOM$RANDOM$RANDOM"
 }
 
 map_host() {
@@ -411,10 +421,24 @@ the name of the command to run on each node."
     wait
 }
 
+copy_htraced_to_c2424() {
+    run_or_die rsync -avi \
+        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htraced \
+        c2424.halxg.cloudera.com:/tmp/htraced
+    run_or_die ssh -o StrictHostKeyChecking=no c2424.halxg.cloudera.com \
+        sudo mv -f /tmp/htraced /usr/lib/htrace/bin/htraced
+    run_or_die rsync -avi \
+        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htracedTool \
+        c2424.halxg.cloudera.com:/tmp/htracedTool
+    run_or_die ssh -o StrictHostKeyChecking=no c2424.halxg.cloudera.com \
+        sudo mv -f /tmp/htracedTool /usr/lib/htrace/bin/htracedTool
+}
+
 # Kill all subprocesses on exit (doesn't work with kill -9, of course)
 trap 'sleep & kill $(jobs -p)' EXIT
 
 # Determine the hostname hash
+HOSTNAME=`hostname`
 HOSTNAME_HASH=0x`hostname | md5sum | head -c 10`
 
 ACTION="${1}"
@@ -447,6 +471,10 @@ case ${ACTION} in
         ;;
     select)
         run_select "${@}"
+        exit 0
+        ;;
+    copy_htraced_to_c2424)
+        copy_htraced_to_c2424 "${@}"
         exit 0
         ;;
     "")

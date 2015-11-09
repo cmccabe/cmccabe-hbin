@@ -399,6 +399,17 @@ node_copyfromlocal() {
     run_or_die hadoop fs -copyFromLocal "${TEST_DIR}" "/tmp/${HOSTNAME}.$RANDOM$RANDOM$RANDOM"
 }
 
+repeat() {
+    TOTAL_REPEATS=$1
+    shift
+    [ "${TOTAL_REPEATS}" -eq "${TOTAL_REPEATS}" ] &>/dev/null || die "repeat must be passed a number"
+    SRC="${BASH_SOURCE[0]}"
+    for i in `seq 1 ${TOTAL_REPEATS}`; do
+        echo "repeat $i of ${TOTAL_REPEATS} of $@"
+        "${SRC}" "${@}" || die "${@} failed"
+    done
+}
+
 map_host() {
     echo "*** map ${@}"
     h="${1}"
@@ -470,6 +481,10 @@ case ${ACTION} in
         jps "${@}"
         exit 0
         ;;
+    repeat)
+        repeat "${@}"
+        exit 0
+        ;;
     map)
         map "${@}"
         exit 0
@@ -497,6 +512,7 @@ sync [htrace-rpm]: sync the given htrace RPM to the cluster nodes.
 run [command]: run the given command on all nodes.
 kill_jproc [pattern]: kill java processes matching the given pattern on all nodes.
 jps: show the java processes running on all nodes by running jps.
+repeat [N] [command]: repeat the following script command N times.
 map [command]: run the map command on each host in the cluster.
 select [num] [command]: select 1 / num nodes to run the given command.
 EOF

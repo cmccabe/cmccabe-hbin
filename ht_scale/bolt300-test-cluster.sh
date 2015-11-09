@@ -422,16 +422,21 @@ the name of the command to run on each node."
 }
 
 copy_htraced_to_c2424() {
-    run_or_die rsync -avi \
+    run_or_die rsync -avi --delete \
         /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htraced \
         c2424.halxg.cloudera.com:/tmp/htraced
     run_or_die ssh -o StrictHostKeyChecking=no c2424.halxg.cloudera.com \
         sudo mv -f /tmp/htraced /usr/lib/htrace/bin/htraced
-    run_or_die rsync -avi \
+    run_or_die rsync -avi --delete \
         /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htracedTool \
         c2424.halxg.cloudera.com:/tmp/htracedTool
     run_or_die ssh -o StrictHostKeyChecking=no c2424.halxg.cloudera.com \
         sudo mv -f /tmp/htracedTool /usr/lib/htrace/bin/htracedTool
+    run_or_die rsync -avi --delete \
+        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-webapp/src/main/webapp/ \
+        c2424.halxg.cloudera.com:/tmp/htracedWeb/
+    run_or_die ssh -o StrictHostKeyChecking=no c2424.halxg.cloudera.com \
+        sudo rsync -avi /tmp/htracedWeb/ /usr/lib/htrace/web/
 }
 
 # Kill all subprocesses on exit (doesn't work with kill -9, of course)

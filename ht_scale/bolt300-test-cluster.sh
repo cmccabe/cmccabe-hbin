@@ -451,7 +451,7 @@ copy_htraced_to_c2424() {
 }
 
 # Kill all subprocesses on exit (doesn't work with kill -9, of course)
-trap 'sleep & kill $(jobs -p)' EXIT
+trap 'sleep & kill $(jobs -p) ; exit' INT EXIT
 
 # Determine the hostname hash
 HOSTNAME=`hostname`

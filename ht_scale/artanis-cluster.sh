@@ -19,7 +19,7 @@ run_or_die() {
     "${@}" || die "${@}"
 }
 
-sync_host() {
+sync_rpm_host() {
     RPM_NAME="${1}"
     h="${2}"
     echo "*** ${h}: installing ${RPM_NAME}"
@@ -28,12 +28,12 @@ sync_host() {
     ssh -o StrictHostKeyChecking=no "$h" "sudo rpm -v -i --nodeps r.rpm" || die "failed to install rpm on $h"
 }
 
-sync() {
+sync_rpm() {
     RPM_NAME="${1}"
     shift
     [ -e "${RPM_NAME}" ] || die "failed to find file ${RPM_NAME}"
     for h in $HOSTS; do
-        sync_host "${RPM_NAME}" "${h}" &>> "${h}.txt" &
+        sync_rpm_host "${RPM_NAME}" "${h}" &>> "${h}.txt" &
     done
     wait
 }
@@ -110,8 +110,8 @@ node_create_random_local() {
     export TEST_DIR="/tmp/$$.$RANDOM.$RANDOM"
     mkdir -p "${TEST_DIR}" || die "failed to mkdir ${TEST_DIR}"
     trap "rm -rf ${TEST_DIR}" EXIT
-    NUM_RANDOM_FILES=100
-    echo "creating random local directory ${TEST_DIR}"
+    NUM_RANDOM_FILES=${NUM_RANDOM_FILES:?100}
+    echo "creating ${NUM_RANDOM_FILES} files in random local directory ${TEST_DIR}"
     for i in `seq 1 $NUM_RANDOM_FILES`; do
         head -c $(($RANDOM % 3000)) /dev/urandom | base64 > "${TEST_DIR}/$i"
     done
@@ -155,24 +155,6 @@ the name of the command to run on each node."
     wait
 }
 
-copy_htraced_to_a2402() {
-    run_or_die rsync -avi --delete \
-        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htraced \
-        a2402.halxg.cloudera.com:/tmp/htraced
-    run_or_die ssh -o StrictHostKeyChecking=no a2402.halxg.cloudera.com \
-        sudo mv -f /tmp/htraced /usr/lib/htrace/bin/htraced
-    run_or_die rsync -avi --delete \
-        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-htraced/go/build/htracedTool \
-        a2402.halxg.cloudera.com:/tmp/htracedTool
-    run_or_die ssh -o StrictHostKeyChecking=no a2402.halxg.cloudera.com \
-        sudo mv -f /tmp/htracedTool /usr/lib/htrace/bin/htracedTool
-    run_or_die rsync -avi --delete \
-        /home/cmccabe/cdh/repos/cdh5/htrace/htrace-webapp/src/main/webapp/ \
-        a2402.halxg.cloudera.com:/tmp/htracedWeb/
-    run_or_die ssh -o StrictHostKeyChecking=no a2402.halxg.cloudera.com \
-        sudo rsync -avi /tmp/htracedWeb/ /usr/lib/htrace/web/
-}
-
 # Kill all subprocesses on exit (doesn't work with kill -9, of course)
 trap 'sleep & kill $(jobs -p) ; exit' INT EXIT
 
@@ -188,8 +170,8 @@ if [[ ${ACTION} == node* ]]; then
 fi
 
 case ${ACTION} in
-    sync)
-        sync "${@}"
+    sync_rpm)
+        sync_rpm "${@}"
         exit 0
         ;;
     run)
@@ -216,10 +198,6 @@ case ${ACTION} in
         run_select "${@}"
         exit 0
         ;;
-    copy_htraced_to_a2402)
-        copy_htraced_to_a2402 "${@}"
-        exit 0
-        ;;
     "")
         exit 0
         ;;
@@ -231,7 +209,7 @@ Script results are appended to files-- one per host.
 Search for the string 'FAIL' to identify failures.
 
 Known actions:
-sync [htrace-rpm]: sync the given htrace RPM to the cluster nodes.
+sync_rpm [htrace-rpm]: sync the given htrace RPM to the cluster nodes.
 run [command]: run the given command on all nodes.
 kill_jproc [pattern]: kill java processes matching the given pattern on all nodes.
 jps: show the java processes running on all nodes by running jps.

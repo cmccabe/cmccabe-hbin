@@ -3,7 +3,6 @@
 export JPS="/usr/java/jdk1.7.0_67-cloudera/bin/jps"
 
 export HOSTS="a1008.halxg.cloudera.com \
-c1604.halxg.cloudera.com \
 a1009.halxg.cloudera.com \
 a1010.halxg.cloudera.com \
 a1012.halxg.cloudera.com \
@@ -40,10 +39,10 @@ a1135.halxg.cloudera.com \
 a1136.halxg.cloudera.com \
 a1137.halxg.cloudera.com \
 a1138.halxg.cloudera.com \
-a1205.halxg.cloudera.com \
 a1308.halxg.cloudera.com \
 a1309.halxg.cloudera.com \
 a1310.halxg.cloudera.com \
+a1311.halxg.cloudera.com \
 a1312.halxg.cloudera.com \
 a1314.halxg.cloudera.com \
 a1315.halxg.cloudera.com \
@@ -53,6 +52,7 @@ a1318.halxg.cloudera.com \
 a1319.halxg.cloudera.com \
 a1320.halxg.cloudera.com \
 a1321.halxg.cloudera.com \
+a1322.halxg.cloudera.com \
 a1323.halxg.cloudera.com \
 a1324.halxg.cloudera.com \
 a1325.halxg.cloudera.com \
@@ -165,6 +165,7 @@ a2020.halxg.cloudera.com \
 a2021.halxg.cloudera.com \
 a2023.halxg.cloudera.com \
 a2024.halxg.cloudera.com \
+a2026.halxg.cloudera.com \
 a2027.halxg.cloudera.com \
 a2029.halxg.cloudera.com \
 a2030.halxg.cloudera.com \
@@ -227,30 +228,6 @@ c1728.halxg.cloudera.com \
 c1730.halxg.cloudera.com \
 c1731.halxg.cloudera.com \
 c1732.halxg.cloudera.com \
-c1804.halxg.cloudera.com \
-c1805.halxg.cloudera.com \
-c1806.halxg.cloudera.com \
-c1807.halxg.cloudera.com \
-c1808.halxg.cloudera.com \
-c1809.halxg.cloudera.com \
-c1810.halxg.cloudera.com \
-c1811.halxg.cloudera.com \
-c1812.halxg.cloudera.com \
-c1813.halxg.cloudera.com \
-c1814.halxg.cloudera.com \
-c1815.halxg.cloudera.com \
-c1816.halxg.cloudera.com \
-c1817.halxg.cloudera.com \
-c1818.halxg.cloudera.com \
-c1819.halxg.cloudera.com \
-c1820.halxg.cloudera.com \
-c1821.halxg.cloudera.com \
-c1822.halxg.cloudera.com \
-c1823.halxg.cloudera.com \
-c1824.halxg.cloudera.com \
-c1825.halxg.cloudera.com \
-c1826.halxg.cloudera.com \
-c1827.halxg.cloudera.com \
 c1830.halxg.cloudera.com \
 c1831.halxg.cloudera.com \
 c1832.halxg.cloudera.com \
@@ -285,6 +262,9 @@ c2434.halxg.cloudera.com \
 c2436.halxg.cloudera.com \
 c2438.halxg.cloudera.com \
 "
+
+# when syncing for CSD purposes
+#export HOSTS="c1604.halxg.cloudera.com"
 
 die() {
     echo "FAIL: "$@

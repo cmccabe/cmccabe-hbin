@@ -18,11 +18,12 @@ type Commit struct {
 	text string
 	lineno int
 	associatedSvnText string
+	status string
 }
 
 func (c *Commit) String() string {
 	return fmt.Sprintf("%s%s %s%s %s%s %s%s %s",
-		"???", *fieldSeparator, *branchName, *fieldSeparator, c.hash,
+		c.status, *fieldSeparator, *branchName, *fieldSeparator, c.hash,
 		*fieldSeparator, c.text, *fieldSeparator, c.associatedSvnText);
 }
 
@@ -36,7 +37,7 @@ func CommitFromLine(line string, lineno int) (*Commit, error) {
 		return nil, errors.New(fmt.Sprintf("failed to find a space " +
 			"on line %d", lineno))
 	}
-	commit := Commit { parts[0], strings.TrimSpace(parts[1]), lineno, "" }
+	commit := Commit { parts[0], strings.TrimSpace(parts[1]), lineno, "", "" }
 	return &commit, nil
 }
 
@@ -66,6 +67,45 @@ func isNumeric(text string) bool {
 		}
 	}
 	return true
+}
+
+func (c *Commit) PopulateStatus() {
+	//fmt.Println("processing %v", c)
+	fileName := fmt.Sprintf("/tmp/jirafun.status.%d", os.Getpid());
+	err := gitCommand(fileName, false, "git", "reset", "--hard")
+	if err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+	//fmt.Println(" cherry picking %v", c.hash)
+	err = gitCommand(fileName, false, "git", "cherry-pick", strings.TrimSpace(c.hash))
+	if err == nil {
+		c.status = "CLEAN"
+		return
+	}
+	cmd := exec.Command("git", "checkout", "HEAD", "--",
+		"hadoop-hdfs-project/hadoop-hdfs/CHANGES.txt",
+		"hadoop-common-project/hadoop-common/CHANGES.txt")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	if err2 := cmd.Run(); err2 != nil {
+		fmt.Print(err2)
+		os.Exit(1)
+	}
+
+	// use git commit to determine whether the conflict has been resolved.
+	err = gitCommand(fileName, false, "git", "commit", "-m", "test")
+	if err != nil {
+		c.status = "MERGE ERROR"
+		return
+	} else {
+		c.status = "CLEAN"
+	}
+	err = gitCommand(fileName, false, "git", "reset", "HEAD~")
+	if err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
 }
 
 func (c *Commit) PopulateSvnText(jiraId string) {
@@ -152,7 +192,7 @@ func (rl *RefLog) LoadFile(name string, il *IgnoreList) error {
 		}
 		key := commit.Match(rl.regex)
 		if (key != nil) {
-			_, ignored := il.ignores[*key]
+			_, ignored := il.ignores[strings.TrimSpace(*key)]
 			if (!ignored) {
 				rl.commits[*key] = commit
 			}
@@ -175,6 +215,12 @@ func (rl *RefLog) GetMissing(alt *RefLog) *RefLog {
 func (rl *RefLog) PopulateSvnText() {
 	for jiraId, c := range rl.commits {
 		c.PopulateSvnText(jiraId)
+	}
+}
+
+func (rl *RefLog) PopulateStatus() {
+	for _, c := range rl.commits {
+		c.PopulateStatus()
 	}
 }
 
@@ -232,19 +278,23 @@ func (il *IgnoreList) ReadIgnoreFile(fileName string,
 		var commit *Commit
 		commit, err = CommitFromLine(line, lineno)
 		if (err != nil) {
+			if (regex.MatchString(line)) {
+				il.ignores[strings.TrimSpace(line)] = true
+				continue
+			}
 			return err
 		} else if (commit == nil) {
 			continue
 		}
 		key := commit.Match(regex)
 		if (key != nil) {
-			il.ignores[*key] = true
+			il.ignores[strings.TrimSpace(*key)] = true
 		}
 	}
 	return nil
 }
 
-func gitCommand(outFile string, args ...string) error {
+func gitCommand(outFile string, printErr bool, args ...string) error {
 	f, err := os.Create(outFile)
 	if err != nil {
 		return err;
@@ -252,7 +302,11 @@ func gitCommand(outFile string, args ...string) error {
 	defer f.Close()
 	cmd := exec.Command(args[0])
 	cmd.Args = args
-	cmd.Stderr = os.Stderr
+	if (printErr) {
+		cmd.Stderr = os.Stderr
+	} else {
+		cmd.Stderr = nil
+	}
 	cmd.Stdout = f
 	if err2 := cmd.Run(); err2 != nil {
 		return err2
@@ -302,13 +356,13 @@ func main() {
 		fmt.Sprintf("/tmp/jirafun.2.%d", os.Getpid()) }
 	defer os.Remove(fileNames[0])
 	defer os.Remove(fileNames[1])
-	err = gitCommand(fileNames[1], "git", "rev-list",
+	err = gitCommand(fileNames[1], true, "git", "rev-list",
 		"--pretty=oneline", *branchName)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	err = gitCommand(fileNames[0], "git", "rev-list",
+	err = gitCommand(fileNames[0], true, "git", "rev-list",
 		"--pretty=oneline", "HEAD")
 	if err != nil {
 		fmt.Print(err)
@@ -327,6 +381,7 @@ func main() {
 	}
 	missing := refLogs[0].GetMissing(refLogs[1])
 	missing.PopulateSvnText()
+	missing.PopulateStatus()
 	fmt.Printf("JIRA%s status%s branch%s git hash%s commit text%s" +
 		"svn auxillary text\n",
 		*fieldSeparator, *fieldSeparator, *fieldSeparator,

@@ -37,7 +37,7 @@ func CommitFromLine(line string, lineno int) (*Commit, error) {
 		return nil, errors.New(fmt.Sprintf("failed to find a space " +
 			"on line %d", lineno))
 	}
-	commit := Commit { parts[0], strings.TrimSpace(parts[1]), lineno, "", "" }
+	commit := Commit { parts[0], strings.TrimSpace(parts[1]), lineno, "", "???" }
 	return &commit, nil
 }
 
@@ -70,14 +70,19 @@ func isNumeric(text string) bool {
 }
 
 func (c *Commit) PopulateStatus() {
-	//fmt.Println("processing %v", c)
 	fileName := fmt.Sprintf("/tmp/jirafun.status.%d", os.Getpid());
-	err := gitCommand(fileName, false, "git", "reset", "--hard")
+	err := gitCommand(fileName, false, "git", "checkout", *mergeBranchName)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
 	}
-	//fmt.Println(" cherry picking %v", c.hash)
+	// fmt.Println("processing %v", c)
+	err = gitCommand(fileName, false, "git", "reset", "--hard")
+	if err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+	// fmt.Println(" cherry picking %v", c.hash)
 	err = gitCommand(fileName, false, "git", "cherry-pick", strings.TrimSpace(c.hash))
 	if err == nil {
 		c.status = "CLEAN"
@@ -95,13 +100,14 @@ func (c *Commit) PopulateStatus() {
 
 	// use git commit to determine whether the conflict has been resolved.
 	err = gitCommand(fileName, false, "git", "commit", "-m", "test")
+	resetTo := "HEAD"
 	if err != nil {
 		c.status = "MERGE ERROR"
-		return
 	} else {
 		c.status = "CLEAN"
+		resetTo += "~"
 	}
-	err = gitCommand(fileName, false, "git", "reset", "--hard", "HEAD~")
+	err = gitCommand(fileName, false, "git", "reset", "--hard", resetTo)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
@@ -325,6 +331,7 @@ var associatedSvnRepo *string = flag.String("s", "",
 	"optional local directory with an associated subversion repository.  " +
 	"This will be used to make 'merging change rXYZ messages' more helpful.")
 var fieldSeparator *string = flag.String("f", "❆", "field separator to use.")
+var mergeBranchName *string = flag.String("m", "", "the branch to merge")
 
 func main() {
 	flag.Parse()
@@ -381,7 +388,9 @@ func main() {
 	}
 	missing := refLogs[0].GetMissing(refLogs[1])
 	missing.PopulateSvnText()
-	missing.PopulateStatus()
+	if (*mergeBranchName != "") {
+		missing.PopulateStatus()
+	}
 	fmt.Printf("JIRA%s status%s branch%s git hash%s commit text%s" +
 		"svn auxillary text\n",
 		*fieldSeparator, *fieldSeparator, *fieldSeparator,

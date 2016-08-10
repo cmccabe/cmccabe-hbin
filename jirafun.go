@@ -297,6 +297,7 @@ func (il *IgnoreList) ReadIgnoreFile(fileName string,
 			il.ignores[strings.TrimSpace(*key)] = true
 		}
 	}
+	fmt.Fprintf(os.Stderr, "Ignoring %d jiras\n", len(il.ignores));
 	return nil
 }
 

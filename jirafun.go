@@ -69,6 +69,18 @@ func isNumeric(text string) bool {
 	return true
 }
 
+func ResetBranch(fileName string, status string) {
+	resetTo := "HEAD"
+	if status == "CLEAN" {
+		resetTo = "HEAD~"
+	}
+	err := gitCommand(fileName, false, "git", "reset", "--hard", resetTo)
+	if err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+}
+
 func (c *Commit) PopulateStatus() {
 	fileName := fmt.Sprintf("/tmp/jirafun.status.%d", os.Getpid());
 	err := gitCommand(fileName, false, "git", "checkout", *mergeBranchName)
@@ -86,6 +98,7 @@ func (c *Commit) PopulateStatus() {
 	err = gitCommand(fileName, false, "git", "cherry-pick", strings.TrimSpace(c.hash))
 	if err == nil {
 		c.status = "CLEAN"
+		ResetBranch(fileName, c.status)
 		return
 	}
 	cmd := exec.Command("git", "checkout", "HEAD", "--",
@@ -100,18 +113,12 @@ func (c *Commit) PopulateStatus() {
 
 	// use git commit to determine whether the conflict has been resolved.
 	err = gitCommand(fileName, false, "git", "commit", "-m", "test")
-	resetTo := "HEAD"
 	if err != nil {
 		c.status = "MERGE ERROR"
 	} else {
 		c.status = "CLEAN"
-		resetTo += "~"
 	}
-	err = gitCommand(fileName, false, "git", "reset", "--hard", resetTo)
-	if err != nil {
-		fmt.Print(err)
-		os.Exit(1)
-	}
+	ResetBranch(fileName, c.status)
 }
 
 func (c *Commit) PopulateSvnText(jiraId string) {
@@ -297,6 +304,7 @@ func (il *IgnoreList) ReadIgnoreFile(fileName string,
 			il.ignores[strings.TrimSpace(*key)] = true
 		}
 	}
+	fmt.Fprintf(os.Stderr, "Ignoring %d jiras\n", len(il.ignores));
 	return nil
 }
 

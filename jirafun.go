@@ -101,9 +101,7 @@ func (c *Commit) PopulateStatus() {
 		ResetBranch(fileName, c.status)
 		return
 	}
-	cmd := exec.Command("git", "checkout", "HEAD", "--",
-		"hadoop-hdfs-project/hadoop-hdfs/CHANGES.txt",
-		"hadoop-common-project/hadoop-common/CHANGES.txt")
+	cmd := exec.Command("git", "checkout", "HEAD")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err2 := cmd.Run(); err2 != nil {

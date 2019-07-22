@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$0: list confluentinc go repos"
+    echo "usage: $0 [flags] [path]"
+    echo
+    echo "-h: This help message."
+    echo "-l: List the full repo paths."
+}
+
+FULL=0
+while getopts "hl" arg; do
+	case $arg in
+	h) usage; exit 0;;
+    l) FULL=1;;
+	?) echo "Getopts error"
+       usage
+       exit 1;;
+  esac
+done
+shift $((OPTIND-1))
+REPOS=$(find ${HOME}/go/*/src/github.com/confluentinc/ -mindepth 1 -maxdepth 1 | sort)
+SHORT_REPOS=$(find ${HOME}/go/*/src/github.com/confluentinc/ -mindepth 1 -maxdepth 1 | sort | sed 's_.*/__')
+if [[ $# -eq 0 ]]; then
+	if [[ $FULL == 0 ]]; then
+		echo $SHORT_REPOS
+	else
+		echo $REPOS | sed 's/ /\n/g'
+	fi
+elif [[ $# -gt 1 ]]; then
+    echo "Too many arguments"
+    echo
+    usage
+    exit 1
+else
+    ARG=$1
+	for repo in $REPOS; do
+        if [[ $repo =~ $ARG ]]; then
+            echo $repo
+            exit 0
+        fi
+	done
+    echo "Not found: $ARG"
+    exit 1
+fi

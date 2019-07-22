@@ -5,9 +5,12 @@
 #
 
 # binaries
-jirafun
 jarpatch
 java_merge
+jirafun
+parse-zk-date
+parse-zk-log-into-timeseries
+unix-milli-to-wall-clock
 
 #
 # Normal rules

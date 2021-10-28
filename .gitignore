@@ -6,6 +6,7 @@
 
 # binaries
 cloud-patch-decoder
+find-hanging-tests
 jarpatch
 java_merge
 jirafun

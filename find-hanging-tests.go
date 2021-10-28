@@ -37,6 +37,11 @@ func handleLine(s string, activeMap map[string]bool) {
 		delete(activeMap, s[:failedIndex])
 		return
 	}
+	skippedIndex := strings.Index(s, "SKIPPED")
+	if skippedIndex > 0 {
+		delete(activeMap, s[:skippedIndex])
+		return
+	}
 }
 
 func printMap(activeMap map[string]bool) {

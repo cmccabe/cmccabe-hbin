@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+die() {
+	echo $@
+	exit 1
+}
+
+find_file() {
+	DIR=$1
+	WHAT=$2
+	FILE=$(find ${DIR} -noleaf -xdev -name '*.java' \
+		-o -name '*.proto' \
+		-o -name '*.h' \
+		-o -name '*.xml' \
+		-o -name '*.c' \
+		-o -name '*.cc' \
+		-o -name '*.scala' \
+		-o -name '*.go' \
+		-o -name '*.py' \
+		-o -name '*.gradle' \
+		-o -name '*.json' \
+		| grep "${WHAT}" | sort -r | head -n 1)
+	[[ -e "${FILE}" ]] || die "Nothing found in $VD_LEFT"
+}
+
+[[ $# == 1 ]] || die "You must pass exactly one argument: what to search for"
+SEARCH_PATTERN="${1}"
+#VD_LEFT="${VD_LEFT:-/home/cmccabe/src/kafka2}"
+VD_LEFT="${VD_LEFT:-/home/cmccabe/src/ccs-kafka}"
+VD_RIGHT="${VD_RIGHT:-/home/cmccabe/src/ce-kafka2}"
+find_file "${VD_LEFT}" "${SEARCH_PATTERN}"
+LEFT_FILE="${FILE}"
+find_file "${VD_RIGHT}" "${SEARCH_PATTERN}"
+RIGHT_FILE="${FILE}"
+exec vimdiff "${LEFT_FILE}" "${RIGHT_FILE}"

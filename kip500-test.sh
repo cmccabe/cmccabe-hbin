@@ -80,9 +80,9 @@ set -e
 run_gradle_for_test_submodules \
     server-common \
     shell \
-    metadata \
-    raft
+    metadata
 if [[ $ALL == 1 ]]; then
+    run_gradle_for_test_submodules raft
     run_specific_tests core \
         AlterIsrManagerTest \
         BrokerLifecycleManagerTest \
@@ -92,6 +92,7 @@ if [[ $ALL == 1 ]]; then
         ClientQuotasRequestTest \
         ClusterToolTest \
         ControllerApisTest \
+        ControllerConfigurationValidatorTest \
         DynamicConfigChangeTest \
         InterBrokerSendThreadTest \
         KafkaMetadataLogTest \

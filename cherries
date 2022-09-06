@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+if [[ $# == 0 || "$1" == "-h" || "$1" == "--help" ]]; then
+    script="$(basename $0)"
+    cat <<EOF
+$script: handle cherry picks
+
+$script up
+    Fetch from all remotes.
+
+$script [expression]
+    Search for the expression in the git logs of all branches.
+EOF
+    exit 0
+fi
+
+ARGS="${@}"
+BRANCHES=("origin/master" "origin/7.3.x" "apache/trunk" "apache/3.3")
+
+if [[ $ARGS == "up" ]]; then
+    for remote in $(for b in ${BRANCHES[@]}; do echo $b; done | sed 's_/.*__' | sort | uniq); do
+        git fetch $remote
+    done
+else
+    for branch in ${BRANCHES[@]}; do
+        git log --oneline $branch | grep -- "${ARGS}" | xargs -L1 echo "[$branch]"
+    done
+fi

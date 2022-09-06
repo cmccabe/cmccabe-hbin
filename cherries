@@ -23,6 +23,6 @@ if [[ $ARGS == "up" ]]; then
     done
 else
     for branch in ${BRANCHES[@]}; do
-        git log --oneline $branch | grep -- "${ARGS}" | xargs -L1 echo "[$branch]"
+        git log --oneline $branch | grep -- "${ARGS}" | sed "s@^@\[$branch\] @"
     done
 fi

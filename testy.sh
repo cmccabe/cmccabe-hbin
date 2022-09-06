@@ -14,7 +14,11 @@ while [[ $# -gt 0 ]]; do
     FLAGS_TO_APPEND="$FLAGS_TO_APPEND --tests ${1}"
     shift
 done
-#--offline 
+
+if [[ -v OFFLINE ]]; then
+    FLAGS_TO_APPEND="$FLAGS_TO_APPEND --offline"
+fi
+
 exec ./gradlew \
     :${COMPONENT}:test \
     -x :${COMPONENT}:checkstyleMain \

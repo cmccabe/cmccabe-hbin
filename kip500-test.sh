@@ -9,7 +9,7 @@ die() {
 }
 
 gradle_base_command() {
-    echo "./gradlew --offline"
+    echo "./gradlew "
 }
 
 gradle_submodule_arguments() {
@@ -93,17 +93,19 @@ if [[ $ALL == 1 ]]; then
         ClusterToolTest \
         ControllerApisTest \
         ControllerConfigurationValidatorTest \
+        DynamicBrokerReconfigurationTest \
         DynamicConfigChangeTest \
         InterBrokerSendThreadTest \
+        KRaftClusterTest \
         KafkaMetadataLogTest \
         KafkaRaftServerTest \
         KafkaServerTest \
-        Kip500ControllerTest \
         LocalConfigRepositoryTest \
         MetadataBrokersTest \
         MetadataCacheTest \
         MetadataPartitionsTest \
         MetadataRequestWithForwardingTest \
+        MetadataVersionIntegrationTest \
         ProducerIdsIntegrationTest \
         RaftClusterSnapshotTest \
         RaftClusterTest \

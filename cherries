@@ -15,7 +15,7 @@ EOF
 fi
 
 ARGS="${@}"
-BRANCHES=("origin/master" "origin/7.3.x" "apache/trunk" "apache/3.3")
+BRANCHES=("apache/trunk" "apache/3.3" "apache/3.4" "origin/master" "origin/7.3.x" "origin/7.4.x")
 
 if [[ $ARGS == "up" ]]; then
     for remote in $(for b in ${BRANCHES[@]}; do echo $b; done | sed 's_/.*__' | sort | uniq); do

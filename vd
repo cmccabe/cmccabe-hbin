@@ -11,6 +11,7 @@ find_file() {
 	FILE=$(find ${DIR} -noleaf -xdev -name '*.java' \
 		-o -name '*.proto' \
 		-o -name '*.h' \
+		-o -name '*.html' \
 		-o -name '*.xml' \
 		-o -name '*.c' \
 		-o -name '*.cc' \
@@ -32,4 +33,23 @@ find_file "${VD_LEFT}" "${SEARCH_PATTERN}"
 LEFT_FILE="${FILE}"
 find_file "${VD_RIGHT}" "${SEARCH_PATTERN}"
 RIGHT_FILE="${FILE}"
-exec vimdiff "${LEFT_FILE}" "${RIGHT_FILE}"
+EXTRA_ARGS=""
+if [[ "${VD_SPLIT}" == "stacked" ]]; then
+    EXTRA_ARGS="$EXTRA_ARGS -o"
+elif [[ "${VD_SPLIT}" == "side-by-side" ]]; then
+    : # nothing to do
+elif [[ "${VD_SPLIT}" == "" ]]; then
+    : # nothing to do
+else
+    die "Unknown VD_SPLIT value of ${VD_SPLIT}"
+fi
+
+#
+# You can use vimstart here to read file names from stdin. Like so:
+#
+# export VD_BIN=vimstart
+# cat <my_file_name> | vd
+#
+
+VD_BIN="${VD_BIN:vimdiff}"
+exec vimdiff ${EXTRA_ARGS} "${LEFT_FILE}" "${RIGHT_FILE}"

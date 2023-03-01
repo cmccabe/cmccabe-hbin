@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+die() {
+    echo $@
+    exit 1
+}
+
+usage() {
+    cat<<EOF
+gradlew.sh: builds a Kafka project with gradle.
+
+-c: pass this to enable checks such as spotbugs.
+-h: this help message.
+EOF
+}
+
+check=0
+install=0
+while getopts  "cih" flag; do
+    case $flag in
+    c)  check=1;;
+    i)  install=1;;
+    h)  usage; exit 0;;
+    *)  echo "getopts error"
+        echo
+        usage
+        exit 1;;
+    esac
+    #echo "$flag" $OPTIND $OPTARG
+done
+shift $(($OPTIND - 1))
+EXTRA_ARGS="${@}"
+
+GRADLE_ARGS="jar -x test -x javadoc"
+if [[ ${check} -eq 1 ]]; then
+    GRADLE_ARGS="${GRADLE_ARGS} check"
+else
+    GRADLE_ARGS="${GRADLE_ARGS} -x check"
+fi
+if [[ ${install} -eq 1 ]]; then
+    GRADLE_ARGS="${GRADLE_ARGS} install"
+fi
+echo ./gradlew ${GRADLE_ARGS} ${EXTRA_ARGS}
+exec ./gradlew ${GRADLE_ARGS} ${EXTRA_ARGS}

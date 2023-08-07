@@ -20,6 +20,7 @@ find_file() {
 		-o -name '*.py' \
 		-o -name '*.gradle' \
 		-o -name '*.json' \
+		-o -name '*.sh' \
 		| grep "${WHAT}" | sort -r | head -n 1)
 	[[ -e "${FILE}" ]] || die "Nothing found in $VD_LEFT"
 }

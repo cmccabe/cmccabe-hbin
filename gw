@@ -9,18 +9,31 @@ usage() {
     cat<<EOF
 gradlew.sh: builds a Kafka project with gradle.
 
+-C: use git clean -fdqx . to clean before building.
 -c: pass this to enable checks such as spotbugs.
+-i: pass this to run the install target.
 -h: this help message.
+-l: pass this to filter gradlew through less
+-S [version]: the scala version. For example, 2.12 or 2.13
+-t: run tests. Specify this more than once to run more tests.
 EOF
 }
 
+clean=0
 check=0
 install=0
-while getopts  "cih" flag; do
+use_less=0
+scala_version=""
+test_level=0
+while getopts  "CcihlS:t" flag; do
     case $flag in
+    C)  clean=1;;
     c)  check=1;;
     i)  install=1;;
     h)  usage; exit 0;;
+    l)  use_less=1;;
+    S)  scala_version="${OPTARG}";;
+    t)  test_level=$(($test_level+1));;
     *)  echo "getopts error"
         echo
         usage
@@ -32,6 +45,12 @@ shift $(($OPTIND - 1))
 EXTRA_ARGS="${@}"
 
 GRADLE_ARGS="jar -x test -x javadoc"
+
+if [[ ${clean} -eq 1 ]]; then
+    echo "[ running git clean ]"
+    git clean -fdqx . || die "git clean failed"
+fi
+
 if [[ ${check} -eq 1 ]]; then
     GRADLE_ARGS="${GRADLE_ARGS} check"
 else
@@ -40,5 +59,21 @@ fi
 if [[ ${install} -eq 1 ]]; then
     GRADLE_ARGS="${GRADLE_ARGS} install"
 fi
-echo ./gradlew ${GRADLE_ARGS} ${EXTRA_ARGS}
-exec ./gradlew ${GRADLE_ARGS} ${EXTRA_ARGS}
+if [[ $test_level -ge 1 ]]; then
+    GRADLE_ARGS="${GRADLE_ARGS} :metadata:test :server-common:test :shell:test"
+fi
+if [[ $test_level -ge 2 ]]; then
+    die "test level 2 and above are not supported yet."
+fi
+
+SCALA_VERSION_ARG=""
+if [[ "${scala_version}" != "" ]]; then
+    SCALA_VERSION_ARG="-PscalaVersion=$scala_version"
+fi
+
+echo ./gradlew ${SCALA_VERSION_ARG} ${GRADLE_ARGS} ${EXTRA_ARGS}
+if [[ ${use_less} -eq 1 ]]; then
+    ./gradlew ${SCALA_VERSION_ARG} ${GRADLE_ARGS} ${EXTRA_ARGS} 2>&1 | less '+F'
+else
+    exec ./gradlew ${SCALA_VERSION_ARG} ${GRADLE_ARGS} ${EXTRA_ARGS}
+fi
